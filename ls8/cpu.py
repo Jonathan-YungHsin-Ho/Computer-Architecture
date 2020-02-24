@@ -47,6 +47,8 @@ class CPU:
         self.ram = [0] * 256
         self.reg = [0] * 8
         self.pc = 0
+        self.fl = 0
+        self.ie = 0
 
     def ram_read(self, mar):
         return self.ram[mar]
@@ -78,13 +80,13 @@ class CPU:
     def alu(self, op, reg_a, reg_b):
         """ALU operations."""
 
-        if op == "ADD":
+        if op == ADD:
             self.reg[reg_a] += self.reg[reg_b]
             self.pc += 3
-        elif op == 'AND':
-            # Peform bitwise-AND on value in register
+        elif op == AND:
+            # Perform bitwise-AND on value in register
             self.pc += 2
-        elif op == 'CMP':
+        elif op == CMP:
             if self.reg[reg_a] == self.reg[reg_b]:
                 # Set Equal E flag to 1
                 pass
@@ -104,45 +106,45 @@ class CPU:
                 # Set Greater-than G flag to 0
                 pass
             self.pc += 3
-        elif op == 'DEC':
+        elif op == DEC:
             self.reg[reg_a] -= 1
             self.pc += 2
-        elif op == 'DIV':
+        elif op == DIV:
             if self.reg[reg_b] == 0:
                 # Print error message and halt
                 pass
             else:
                 self.reg[reg_a] /= self.reg[reg_b]
             self.pc += 3
-        elif op == 'INC':
+        elif op == INC:
             self.reg[reg_a] += 1
             self.pc += 2
-        elif op == 'MOD':
+        elif op == MOD:
             if self.reg[reg_b] == 0:
                 # Print error message and halt
                 pass
             else:
                 self.reg[reg_a] %= self.reg[reg_b]
             self.pc += 3
-        elif op == 'MUL':
+        elif op == MUL:
             self.reg[reg_a] *= self.reg[reg_b]
             self.pc += 3
-        elif op == 'NOT':
+        elif op == NOT:
             # Perform bitwise-NOT on value in register
             self.pc += 2
-        elif op == 'OR':
+        elif op == OR:
             # Perform bitwise-OR on value in register
             self.pc += 2
-        elif op == 'SHL':
+        elif op == SHL:
             # Shift value in registerA left by number of bits specified in registerB, filling low bits with 0
             self.pc += 3
-        elif op == 'SHR':
+        elif op == SHR:
             # Shift value in registerA right by number of bits specified in registerB, filling low bits with 0
             self.pc += 3
-        elif op == 'SUB':
+        elif op == SUB:
             self.reg[reg_a] -= self.reg[reg_b]
             self.pc += 3
-        elif op == 'XOR':
+        elif op == XOR:
             # Perform bitwise-XOR between values in registerA and registerB, storing result in registerA
             self.pc += 3
         else:
@@ -176,47 +178,48 @@ class CPU:
 
         while True:
             instruction = self.ram[self.pc]
+            # print(instruction)
 
-            if instruction == 'CALL':
+            if instruction == CALL:
                 pass
-            elif instruction == 'HLT':
+            elif instruction == HLT:
                 sys.exit(0)
-            elif instruction == 'IRET':
+            elif instruction == IRET:
                 pass
-            elif instruction == 'JEQ':
+            elif instruction == JEQ:
                 pass
-            elif instruction == 'JGE':
+            elif instruction == JGE:
                 pass
-            elif instruction == 'JGT':
+            elif instruction == JGT:
                 pass
-            elif instruction == 'JLE':
+            elif instruction == JLE:
                 pass
-            elif instruction == 'JLT':
+            elif instruction == JLT:
                 pass
-            elif instruction == 'JMP':
+            elif instruction == JMP:
                 self.pc = operand_a
                 self.pc += 2
-            elif instruction == 'JNE':
+            elif instruction == JNE:
                 pass
-            elif instruction == 'LD':
+            elif instruction == LD:
                 pass
-            elif instruction == 'LDI':
-                operand_a = operand_b
+            elif instruction == LDI:
+                self.reg[operand_a] = operand_b
                 self.pc += 3
-            elif instruction == 'NOP':
+            elif instruction == NOP:
                 self.pc += 1
-            elif instruction == 'POP':
+            elif instruction == POP:
                 pass
-            elif instruction == 'PRA':
+            elif instruction == PRA:
                 pass
-            elif instruction == 'PRN':
+            elif instruction == PRN:
                 print(self.reg[operand_a])
                 self.pc += 1
-            elif instruction == 'PUSH':
+            elif instruction == PUSH:
                 pass
-            elif instruction == 'RET':
+            elif instruction == RET:
                 pass
-            elif instruction == 'ST':
+            elif instruction == ST:
                 pass
             else:
                 print(f'Unknown instruction at index {self.pc}')
