@@ -7,7 +7,7 @@ from cpu import *
 
 
 if len(sys.argv) != 2:
-    print('usage: ls8.py filename')
+    print('Usage: ls8.py filename')
     sys.exit(1)
 
 program = sys.argv[1]

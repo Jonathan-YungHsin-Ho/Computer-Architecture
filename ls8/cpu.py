@@ -50,6 +50,43 @@ class CPU:
         self.fl = 0
         self.ie = 0
 
+        self.branchtable = {}
+        # self.branchtable[CALL] = self.handle_call
+        self.branchtable[HLT] = self.handle_hlt
+        # self.branchtable[IRET] = self.handle_iret
+        # self.branchtable[JEQ] = self.handle_jeq
+        # self.branchtable[JGE] = self.handle_jge
+        # self.branchtable[JGT] = self.handle_jgt
+        # self.branchtable[JLE] = self.handle_jle
+        # self.branchtable[JLT] = self.handle_jlt
+        # self.branchtable[JMP] = self.handle_jmp
+        # self.branchtable[JNE] = self.handle_jne
+        # self.branchtable[LD] = self.handle_ld
+        self.branchtable[LDI] = self.handle_ldi
+        # self.branchtable[MUL] = self.handle_mul
+        # self.branchtable[NOP] = self.handle_nop
+        # self.branchtable[POP] = self.handle_pop
+        # self.branchtable[PRA] = self.handle_pra
+        self.branchtable[PRN] = self.handle_prn
+        # self.branchtable[PUSH] = self.handle_push
+        # self.branchtable[RET] = self.handle_ret
+        # self.branchtable[ST] = self.handle_st
+
+        self.branchtable[ADD] = self.alu_handle_add
+        # self.branchtable[AND] = self.alu_handle_and
+        # self.branchtable[CMP] = self.alu_handle_cmp
+        self.branchtable[DEC] = self.alu_handle_dec
+        # self.branchtable[DIV] = self.alu_handle_div
+        self.branchtable[INC] = self.alu_handle_inc
+        # self.branchtable[MOD] = self.alu_handle_mod
+        self.branchtable[MUL] = self.alu_handle_mul
+        # self.branchtable[NOT] = self.alu_handle_not
+        # self.branchtable[OR] = self.alu_handle_or
+        # self.branchtable[SHL] = self.alu_handle_shl
+        # self.branchtable[SHR] = self.alu_handle_shr
+        self.branchtable[SUB] = self.alu_handle_sub
+        # self.branchtable[XOR] = self.alu_handle_xor
+
     def ram_read(self, mar):
         return self.ram[mar]
 
@@ -70,81 +107,16 @@ class CPU:
                     self.ram[address] = instruction
                     address += 1
         except FileNotFoundError:
-            print('ERROR: Must have file name')
+            print('ERROR: Must have valid file name')
             sys.exit(2)
 
-    def alu(self, op, reg_a, reg_b):
-        """ALU operations."""
+    # def alu(self, op, reg_a, reg_b):
+    #     """ALU operations."""
 
-        if op == ADD:
-            self.reg[reg_a] += self.reg[reg_b]
-            self.pc += 3
-        elif op == 'AND':
-            # Perform bitwise-AND on value in register
-            self.pc += 2
-        elif op == 'CMP':
-            if self.reg[reg_a] == self.reg[reg_b]:
-                # Set Equal E flag to 1
-                pass
-            else:
-                # Set Equal E flag to 0
-                pass
-            if self.reg[reg_a] < self.reg[reg_b]:
-                # Set Less-than L flag to 1
-                pass
-            else:
-                # Set Less-than L flag to 0
-                pass
-            if self.reg[reg_a] > self.reg[reg_b]:
-                # Set Greater-than G flag to 1
-                pass
-            else:
-                # Set Greater-than G flag to 0
-                pass
-            self.pc += 3
-        elif op == 'DEC':
-            self.reg[reg_a] -= 1
-            self.pc += 2
-        elif op == 'DIV':
-            if self.reg[reg_b] == 0:
-                # Print error message and halt
-                pass
-            else:
-                self.reg[reg_a] /= self.reg[reg_b]
-            self.pc += 3
-        elif op == 'INC':
-            self.reg[reg_a] += 1
-            self.pc += 2
-        elif op == 'MOD':
-            if self.reg[reg_b] == 0:
-                # Print error message and halt
-                pass
-            else:
-                self.reg[reg_a] %= self.reg[reg_b]
-            self.pc += 3
-        elif op == MUL:
-            self.reg[reg_a] *= self.reg[reg_b]
-            self.pc += 3
-        elif op == 'NOT':
-            # Perform bitwise-NOT on value in register
-            self.pc += 2
-        elif op == 'OR':
-            # Perform bitwise-OR on value in register
-            self.pc += 2
-        elif op == 'SHL':
-            # Shift value in registerA left by number of bits specified in registerB, filling low bits with 0
-            self.pc += 3
-        elif op == 'SHR':
-            # Shift value in registerA right by number of bits specified in registerB, filling low bits with 0
-            self.pc += 3
-        elif op == SUB:
-            self.reg[reg_a] -= self.reg[reg_b]
-            self.pc += 3
-        elif op == 'XOR':
-            # Perform bitwise-XOR between values in registerA and registerB, storing result in registerA
-            self.pc += 3
-        else:
-            raise Exception("Unsupported ALU operation")
+    #     if op == ADD:
+    #         self.reg[reg_a] += self.reg[reg_b]
+    #     else:
+    #         raise Exception("Unsupported ALU operation")
 
     def trace(self):
         """
@@ -172,50 +144,139 @@ class CPU:
             ir = self.ram[self.pc]
             operand_a = self.ram_read(self.pc + 1)
             operand_b = self.ram_read(self.pc + 2)
+            operand_count = ir >> 6
+            instruction_length = operand_count + 1
 
-            if ir == CALL:
-                pass
-            elif ir == HLT:
-                sys.exit(0)
-            elif ir == IRET:
-                pass
-            elif ir == JEQ:
-                pass
-            elif ir == JGE:
-                pass
-            elif ir == JGT:
-                pass
-            elif ir == JLE:
-                pass
-            elif ir == JLT:
-                pass
-            elif ir == JMP:
-                self.pc = operand_a
-                self.pc += 2
-            elif ir == JNE:
-                pass
-            elif ir == LD:
-                pass
-            elif ir == LDI:
-                self.reg[operand_a] = operand_b
-                self.pc += 3
-            elif ir == NOP:
-                self.pc += 1
-            elif ir == POP:
-                pass
-            elif ir == PRA:
-                pass
-            elif ir == PRN:
-                print(self.reg[operand_a])
-                self.pc += 1
-            elif ir == PUSH:
-                pass
-            elif ir == RET:
-                pass
-            elif ir == ST:
-                pass
-            elif ir == MUL:
-                self.alu(ir, operand_a, operand_b)
-            else:
-                print(f'Unknown instruction at index {self.pc}')
-                sys.exit(1)
+            self.branchtable[ir](operand_a, operand_b)
+
+            self.pc += instruction_length
+
+    # def handle_call(self, a, b):
+    #     pass
+
+    def handle_hlt(self, a, b):
+        sys.exit(0)
+
+    # def handle_iret(self, a, b):
+    #     pass
+
+    # def handle_jeq(self, a, b):
+    #     pass
+
+    # def handle_jge(self, a, b):
+    #     pass
+
+    # def handle_jgt(self, a, b):
+    #     pass
+
+    # def handle_jle(self, a, b):
+    #     pass
+
+    # def handle_jlt(self, a, b):
+    #     pass
+
+    # def handle_jmp(self, a, b):
+    #     pass
+
+    # def handle_jne(self, a, b):
+    #     pass
+
+    # def handle_ld(self, a, b):
+    #     pass
+
+    def handle_ldi(self, a, b):
+        self.reg[a] = b
+
+    # def handle_nop(self, a, b):
+    #     pass
+
+    # def handle_pop(self, a, b):
+    #     pass
+
+    # def handle_pra(self, a, b):
+    #     pass
+
+    def handle_prn(self, a, b):
+        print(self.reg[a])
+
+    # def handle_push(self, a, b):
+    #     pass
+
+    # def handle_ret(self, a, b):
+    #     pass
+
+    # def handle_st(self, a, b):
+    #     pass
+
+    def alu_handle_add(self, a, b):
+        self.reg[a] += self.reg[b]
+
+    # def alu_handle_and(self, a, b):
+    #     # Perform bitwise-AND on value in register
+    #     pass
+
+    # def alu_handle_cmp(self, a, b):
+    #     if self.reg[a] == self.reg[b]:
+    #         # Set Equal E flag to 1
+    #         pass
+    #     else:
+    #         # Set Equal E flag to 0
+    #         pass
+    #     if self.reg[a] < self.reg[b]:
+    #         # Set Less-than L flag to 1
+    #         pass
+    #     else:
+    #         # Set Less-than L flag to 0
+    #         pass
+    #     if self.reg[a] > self.reg[b]:
+    #         # Set Greater-than G flag to 1
+    #         pass
+    #     else:
+    #         # Set Greater-than G flag to 0
+    #         pass
+
+    def alu_handle_dec(self, a, b):
+        self.reg[a] -= 1
+
+    # def alu_handle_div(self, a, b):
+    #     if self.reg[reg_b] == 0:
+    #         # Print error message and halt
+    #         pass
+    #     else:
+    #         self.reg[reg_a] /= self.reg[reg_b]
+
+    def alu_handle_inc(self, a, b):
+        self.reg[a] += 1
+
+    # def alu_handle_mod(self, a, b):
+    #     if self.reg[reg_b] == 0:
+    #         # Print error message and halt
+    #         pass
+    #     else:
+    #         self.reg[reg_a] %= self.reg[reg_b]
+
+    def alu_handle_mul(self, a, b):
+        self.reg[a] *= self.reg[b]
+
+    # def alu_handle_not(self, a, b):
+    #     # Perform bitwise-NOT on value in register
+    #     pass
+
+    # def alu_handle_or(self, a, b):
+    #     # Perform bitwise-OR on value in register
+    #     pass
+
+    # def alu_handle_shl(self, a, b):
+    #     # Shift value in registerA left by number of bits specified in registerB, filling low bits with 0
+    #     pass
+
+    # def alu_handle_shr(self, a, b):
+    #     # Shift value in registerA right by number of bits specified in registerB, filling low bits with 0
+    #     pass
+
+    def alu_handle_sub(self, a, b):
+        self.reg[a] -= self.reg[b]
+
+    # def alu_handle_xor(self, a, b):
+    #     # Perform bitwise-XOR between values in registerA and registerB, storing result in registerA
+    #     pass
