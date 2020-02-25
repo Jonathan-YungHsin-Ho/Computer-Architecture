@@ -172,54 +172,51 @@ class CPU:
 
     def run(self):
         """Run the CPU."""
-        ir = self.ram[self.pc]
-        operand_a = self.ram_read(self.pc + 1)
-        operand_b = self.ram_read(self.pc + 2)
-
         while True:
-            instruction = self.ram[self.pc]
-            # print(instruction)
+            ir = self.ram[self.pc]
+            operand_a = self.ram_read(self.pc + 1)
+            operand_b = self.ram_read(self.pc + 2)
 
-            if instruction == CALL:
+            if ir == CALL:
                 pass
-            elif instruction == HLT:
+            elif ir == HLT:
                 sys.exit(0)
-            elif instruction == IRET:
+            elif ir == IRET:
                 pass
-            elif instruction == JEQ:
+            elif ir == JEQ:
                 pass
-            elif instruction == JGE:
+            elif ir == JGE:
                 pass
-            elif instruction == JGT:
+            elif ir == JGT:
                 pass
-            elif instruction == JLE:
+            elif ir == JLE:
                 pass
-            elif instruction == JLT:
+            elif ir == JLT:
                 pass
-            elif instruction == JMP:
+            elif ir == JMP:
                 self.pc = operand_a
                 self.pc += 2
-            elif instruction == JNE:
+            elif ir == JNE:
                 pass
-            elif instruction == LD:
+            elif ir == LD:
                 pass
-            elif instruction == LDI:
+            elif ir == LDI:
                 self.reg[operand_a] = operand_b
                 self.pc += 3
-            elif instruction == NOP:
+            elif ir == NOP:
                 self.pc += 1
-            elif instruction == POP:
+            elif ir == POP:
                 pass
-            elif instruction == PRA:
+            elif ir == PRA:
                 pass
-            elif instruction == PRN:
+            elif ir == PRN:
                 print(self.reg[operand_a])
                 self.pc += 1
-            elif instruction == PUSH:
+            elif ir == PUSH:
                 pass
-            elif instruction == RET:
+            elif ir == RET:
                 pass
-            elif instruction == ST:
+            elif ir == ST:
                 pass
             else:
                 print(f'Unknown instruction at index {self.pc}')
