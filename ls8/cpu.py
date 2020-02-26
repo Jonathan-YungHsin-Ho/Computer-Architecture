@@ -157,7 +157,7 @@ class CPU:
     # def handle_call(self, a, b):
     #     pass
 
-    def handle_hlt(self, a, b):
+    def handle_hlt(self, *_):
         sys.exit(0)
 
     # def handle_int(self, a, b):
@@ -190,26 +190,36 @@ class CPU:
     # def handle_ld(self, a, b):
     #     pass
 
-    def handle_ldi(self, a, b):
-        self.reg[a] = b
+    def handle_ldi(self, reg_a, reg_b):
+        self.reg[reg_a] = reg_b
 
     # def handle_nop(self, a, b):
     #     pass
 
-    def handle_pop(self, reg_num, b):
+    def handle_pop(self, reg_num, _):
+        # Get value from address pointed to by SP
         val = self.ram[self.reg[self.sp]]
+
+        # Copy to given register
         self.reg[reg_num] = val
+
+        # Increment SP
         self.reg[self.sp] += 1
 
     # def handle_pra(self, a, b):
     #     pass
 
-    def handle_prn(self, a, b):
-        print(self.reg[a])
+    def handle_prn(self, reg_num, _):
+        print(self.reg[reg_num])
 
-    def handle_push(self, reg_num, b):
+    def handle_push(self, reg_num, _):
+        # Decrement SP
         self.reg[self.sp] -= 1
+
+        # Get value in given register
         reg_val = self.reg[reg_num]
+
+        # Copy value to address pointed to by SP
         self.ram[self.reg[self.sp]] = reg_val
 
     # def handle_ret(self, a, b):
@@ -218,8 +228,8 @@ class CPU:
     # def handle_st(self, a, b):
     #     pass
 
-    def alu_handle_add(self, a, b):
-        self.reg[a] += self.reg[b]
+    def alu_handle_add(self, reg_a, reg_b):
+        self.reg[reg_a] += self.reg[reg_b]
 
     # def alu_handle_and(self, a, b):
     #     # Perform bitwise-AND on value in register
@@ -245,8 +255,8 @@ class CPU:
     #         # Set Greater-than G flag to 0
     #         pass
 
-    def alu_handle_dec(self, a, b):
-        self.reg[a] -= 1
+    def alu_handle_dec(self, reg_num, _):
+        self.reg[reg_num] -= 1
 
     # def alu_handle_div(self, a, b):
     #     if self.reg[reg_b] == 0:
@@ -255,8 +265,8 @@ class CPU:
     #     else:
     #         self.reg[reg_a] /= self.reg[reg_b]
 
-    def alu_handle_inc(self, a, b):
-        self.reg[a] += 1
+    def alu_handle_inc(self, reg_num, _):
+        self.reg[reg_num] += 1
 
     # def alu_handle_mod(self, a, b):
     #     if self.reg[reg_b] == 0:
@@ -265,8 +275,8 @@ class CPU:
     #     else:
     #         self.reg[reg_a] %= self.reg[reg_b]
 
-    def alu_handle_mul(self, a, b):
-        self.reg[a] *= self.reg[b]
+    def alu_handle_mul(self, reg_a, reg_b):
+        self.reg[reg_a] *= self.reg[reg_b]
 
     # def alu_handle_not(self, a, b):
     #     # Perform bitwise-NOT on value in register
@@ -284,8 +294,8 @@ class CPU:
     #     # Shift value in registerA right by number of bits specified in registerB, filling low bits with 0
     #     pass
 
-    def alu_handle_sub(self, a, b):
-        self.reg[a] -= self.reg[b]
+    def alu_handle_sub(self, reg_a, reg_b):
+        self.reg[reg_a] -= self.reg[reg_b]
 
     # def alu_handle_xor(self, a, b):
     #     # Perform bitwise-XOR between values in registerA and registerB, storing result in registerA
