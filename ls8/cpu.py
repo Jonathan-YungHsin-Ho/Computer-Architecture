@@ -5,7 +5,7 @@ import sys
 
 ADD = 0b10100000
 # AND = 0b10101000
-# CALL = 0b1010000
+CALL = 0b1010000
 # CMP = 0b10100111
 DEC = 0b01100110
 # DIV = 0b10100011
@@ -31,12 +31,14 @@ POP = 0b01000110
 # PRA = 0b01001000
 PRN = 0b01000111
 PUSH = 0b01000101
-# RET = 0b00010001
+RET = 0b00010001
 # SHL = 0b10101100
 # SHR = 0b10101101
 # ST = 0b10000100
 SUB = 0b10100001
 # XOR = 0b10101011
+
+SP = 7
 
 
 class CPU:
@@ -47,13 +49,12 @@ class CPU:
         self.ram = [0] * 256
         self.reg = [0] * 8
         self.pc = 0
-        self.sp = 7
-        self.reg[self.sp] = 0xF4
+        self.reg[SP] = 0xF4
         # self.fl = 0
         # self.ie = 0
 
         self.branchtable = {}
-        # self.branchtable[CALL] = self.handle_call
+        self.branchtable[CALL] = self.handle_call
         self.branchtable[HLT] = self.handle_hlt
         # self.branchtable[INT] = self.handle_int
         # self.branchtable[IRET] = self.handle_iret
@@ -72,7 +73,7 @@ class CPU:
         # self.branchtable[PRA] = self.handle_pra
         self.branchtable[PRN] = self.handle_prn
         self.branchtable[PUSH] = self.handle_push
-        # self.branchtable[RET] = self.handle_ret
+        self.branchtable[RET] = self.handle_ret
         # self.branchtable[ST] = self.handle_st
 
         self.branchtable[ADD] = self.alu_handle_add
@@ -150,12 +151,27 @@ class CPU:
             operand_count = ir >> 6
             instruction_length = operand_count + 1
 
+            # alu_op = ir >> 5 & 0b001
+            sets_pc = ir >> 4 & 0b0001
+
             self.branchtable[ir](operand_a, operand_b)
 
-            self.pc += instruction_length
+            if not sets_pc:
+                self.pc += instruction_length
 
-    # def handle_call(self, a, b):
-    #     pass
+    # General Instructions
+
+    def handle_call(self, a, b):
+        # Decrement SP
+        self.reg[SP] -= 1
+
+        # Push return address on stack
+        return_address = self.pc + 2
+        self.ram[self.reg[SP]] = return_address
+
+        # Set PC to value in register
+        reg_num = self.ram[self.pc + 1]
+        self.pc = self.reg[reg_num]
 
     def handle_hlt(self, *_):
         sys.exit(0)
@@ -198,13 +214,13 @@ class CPU:
 
     def handle_pop(self, reg_num, _):
         # Get value from address pointed to by SP
-        val = self.ram[self.reg[self.sp]]
+        val = self.ram[self.reg[SP]]
 
         # Copy to given register
         self.reg[reg_num] = val
 
         # Increment SP
-        self.reg[self.sp] += 1
+        self.reg[SP] += 1
 
     # def handle_pra(self, a, b):
     #     pass
@@ -214,16 +230,18 @@ class CPU:
 
     def handle_push(self, reg_num, _):
         # Decrement SP
-        self.reg[self.sp] -= 1
+        self.reg[SP] -= 1
 
         # Get value in given register
         reg_val = self.reg[reg_num]
 
         # Copy value to address pointed to by SP
-        self.ram[self.reg[self.sp]] = reg_val
+        self.ram[self.reg[SP]] = reg_val
 
-    # def handle_ret(self, a, b):
-    #     pass
+    def handle_ret(self, *_):
+        # Pop return address off stack and store it on PC
+        self.pc = self.ram[self.reg[SP]]
+        self.reg[SP] += 1
 
     # def handle_st(self, a, b):
     #     pass
@@ -254,6 +272,8 @@ class CPU:
     #     else:
     #         # Set Greater-than G flag to 0
     #         pass
+
+    # ALU Instructions
 
     def alu_handle_dec(self, reg_num, _):
         self.reg[reg_num] -= 1
