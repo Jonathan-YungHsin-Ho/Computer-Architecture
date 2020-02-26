@@ -4,39 +4,39 @@ import sys
 
 
 ADD = 0b10100000
-AND = 0b10101000
-CALL = 0b1010000
-CMP = 0b10100111
+# AND = 0b10101000
+# CALL = 0b1010000
+# CMP = 0b10100111
 DEC = 0b01100110
-DIV = 0b10100011
+# DIV = 0b10100011
 HLT = 0b00000001
 INC = 0b01100101
-INT = 0b01010010
-IRET = 0b00010011
-JEQ = 0b01010101
-JGE = 0b01011010
-JGT = 0b01010111
-JLE = 0b01011001
-JLT = 0b01011000
-JMP = 0b01010100
-JNE = 0b01010110
-LD = 0b10000011
+# INT = 0b01010010
+# IRET = 0b00010011
+# JEQ = 0b01010101
+# JGE = 0b01011010
+# JGT = 0b01010111
+# JLE = 0b01011001
+# JLT = 0b01011000
+# JMP = 0b01010100
+# JNE = 0b01010110
+# LD = 0b10000011
 LDI = 0b10000010
-MOD = 0b10100100
+# MOD = 0b10100100
 MUL = 0b10100010
-NOP = 0b00000000
-NOT = 0b01101001
-OR = 0b10101010
+# NOP = 0b00000000
+# NOT = 0b01101001
+# OR = 0b10101010
 POP = 0b01000110
-PRA = 0b01001000
+# PRA = 0b01001000
 PRN = 0b01000111
 PUSH = 0b01000101
-RET = 0b00010001
-SHL = 0b10101100
-SHR = 0b10101101
-ST = 0b10000100
+# RET = 0b00010001
+# SHL = 0b10101100
+# SHR = 0b10101101
+# ST = 0b10000100
 SUB = 0b10100001
-XOR = 0b10101011
+# XOR = 0b10101011
 
 
 class CPU:
@@ -47,12 +47,15 @@ class CPU:
         self.ram = [0] * 256
         self.reg = [0] * 8
         self.pc = 0
-        self.fl = 0
-        self.ie = 0
+        self.sp = 7
+        self.reg[self.sp] = 0xF4
+        # self.fl = 0
+        # self.ie = 0
 
         self.branchtable = {}
         # self.branchtable[CALL] = self.handle_call
         self.branchtable[HLT] = self.handle_hlt
+        # self.branchtable[INT] = self.handle_int
         # self.branchtable[IRET] = self.handle_iret
         # self.branchtable[JEQ] = self.handle_jeq
         # self.branchtable[JGE] = self.handle_jge
@@ -65,10 +68,10 @@ class CPU:
         self.branchtable[LDI] = self.handle_ldi
         # self.branchtable[MUL] = self.handle_mul
         # self.branchtable[NOP] = self.handle_nop
-        # self.branchtable[POP] = self.handle_pop
+        self.branchtable[POP] = self.handle_pop
         # self.branchtable[PRA] = self.handle_pra
         self.branchtable[PRN] = self.handle_prn
-        # self.branchtable[PUSH] = self.handle_push
+        self.branchtable[PUSH] = self.handle_push
         # self.branchtable[RET] = self.handle_ret
         # self.branchtable[ST] = self.handle_st
 
@@ -157,6 +160,9 @@ class CPU:
     def handle_hlt(self, a, b):
         sys.exit(0)
 
+    # def handle_int(self, a, b):
+    #     pass
+
     # def handle_iret(self, a, b):
     #     pass
 
@@ -190,8 +196,10 @@ class CPU:
     # def handle_nop(self, a, b):
     #     pass
 
-    # def handle_pop(self, a, b):
-    #     pass
+    def handle_pop(self, reg_num, b):
+        val = self.ram[self.reg[self.sp]]
+        self.reg[reg_num] = val
+        self.reg[self.sp] += 1
 
     # def handle_pra(self, a, b):
     #     pass
@@ -199,8 +207,10 @@ class CPU:
     def handle_prn(self, a, b):
         print(self.reg[a])
 
-    # def handle_push(self, a, b):
-    #     pass
+    def handle_push(self, reg_num, b):
+        self.reg[self.sp] -= 1
+        reg_val = self.reg[reg_num]
+        self.ram[self.reg[self.sp]] = reg_val
 
     # def handle_ret(self, a, b):
     #     pass
