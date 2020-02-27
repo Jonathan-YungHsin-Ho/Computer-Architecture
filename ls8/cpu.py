@@ -34,7 +34,7 @@ PUSH = 0b01000101
 RET = 0b00010001
 # SHL = 0b10101100
 # SHR = 0b10101101
-# ST = 0b10000100
+ST = 0b10000100
 SUB = 0b10100001
 # XOR = 0b10101011
 
@@ -74,7 +74,7 @@ class CPU:
         self.branchtable[PRN] = self.handle_prn
         self.branchtable[PUSH] = self.handle_push
         self.branchtable[RET] = self.handle_ret
-        # self.branchtable[ST] = self.handle_st
+        self.branchtable[ST] = self.handle_st
 
         self.branchtable[ADD] = self.alu_handle_add
         # self.branchtable[AND] = self.alu_handle_and
@@ -243,8 +243,12 @@ class CPU:
         self.pc = self.ram[self.reg[SP]]
         self.reg[SP] += 1
 
-    # def handle_st(self, a, b):
-    #     pass
+    def handle_st(self, reg_a, reg_b):
+        reg_b_val = self.reg[reg_b]
+        reg_a_address = self.reg[reg_a]
+        self.ram[reg_a_address] = reg_b_val
+
+    # ALU Instructions
 
     def alu_handle_add(self, reg_a, reg_b):
         self.reg[reg_a] += self.reg[reg_b]
@@ -272,8 +276,6 @@ class CPU:
     #     else:
     #         # Set Greater-than G flag to 0
     #         pass
-
-    # ALU Instructions
 
     def alu_handle_dec(self, reg_num, _):
         self.reg[reg_num] -= 1
