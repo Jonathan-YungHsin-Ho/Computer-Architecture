@@ -3,41 +3,43 @@
 import sys
 
 from datetime import datetime
+import msvcrt
 
 ADD = 0b10100000
-# AND = 0b10101000
+ADDI = 0b10100101
+AND = 0b10101000
 CALL = 0b1010000
-# CMP = 0b10100111
+CMP = 0b10100111
 DEC = 0b01100110
-# DIV = 0b10100011
+DIV = 0b10100011
 HLT = 0b00000001
 INC = 0b01100101
 # INT = 0b01010010
 IRET = 0b00010011
-# JEQ = 0b01010101
-# JGE = 0b01011010
-# JGT = 0b01010111
-# JLE = 0b01011001
-# JLT = 0b01011000
+JEQ = 0b01010101
+JGE = 0b01011010
+JGT = 0b01010111
+JLE = 0b01011001
+JLT = 0b01011000
 JMP = 0b01010100
-# JNE = 0b01010110
-# LD = 0b10000011
+JNE = 0b01010110
+LD = 0b10000011
 LDI = 0b10000010
-# MOD = 0b10100100
+MOD = 0b10100100
 MUL = 0b10100010
-# NOP = 0b00000000
-# NOT = 0b01101001
-# OR = 0b10101010
+NOP = 0b00000000
+NOT = 0b01101001
+OR = 0b10101010
 POP = 0b01000110
 PRA = 0b01001000
 PRN = 0b01000111
 PUSH = 0b01000101
 RET = 0b00010001
-# SHL = 0b10101100
-# SHR = 0b10101101
+SHL = 0b10101100
+SHR = 0b10101101
 ST = 0b10000100
 SUB = 0b10100001
-# XOR = 0b10101011
+XOR = 0b10101011
 
 IM = 5
 IS = 6
@@ -64,17 +66,16 @@ class CPU:
             HLT: self.handle_hlt,
             # INT: self.handle_int,
             IRET: self.handle_iret,
-            # JEQ: self.handle_jeq,
-            # JGE: self.handle_jge,
-            # JGT: self.handle_jgt,
-            # JLE: self.handle_jle,
-            # JLT: self.handle_jlt,
+            JEQ: self.handle_jeq,
+            JGE: self.handle_jge,
+            JGT: self.handle_jgt,
+            JLE: self.handle_jle,
+            JLT: self.handle_jlt,
             JMP: self.handle_jmp,
-            # JNE: self.handle_jne,
-            # LD: self.handle_ld,
+            JNE: self.handle_jne,
+            LD: self.handle_ld,
             LDI: self.handle_ldi,
-            # MUL: self.handle_mul,
-            # NOP: self.handle_nop,
+            NOP: self.handle_nop,
             POP: self.handle_pop,
             PRA: self.handle_pra,
             PRN: self.handle_prn,
@@ -82,19 +83,20 @@ class CPU:
             RET: self.handle_ret,
             ST: self.handle_st,
             ADD: self.alu_handle_add,
-            # AND: self.alu_handle_and,
-            # CMP: self.alu_handle_cmp,
+            ADDI: self.alu_handle_addi,
+            AND: self.alu_handle_and,
+            CMP: self.alu_handle_cmp,
             DEC: self.alu_handle_dec,
-            # DIV: self.alu_handle_div,
+            DIV: self.alu_handle_div,
             INC: self.alu_handle_inc,
-            # MOD: self.alu_handle_mod,
+            MOD: self.alu_handle_mod,
             MUL: self.alu_handle_mul,
-            # NOT: self.alu_handle_not,
-            # OR: self.alu_handle_or,
-            # SHL: self.alu_handle_shl,
-            # SHR: self.alu_handle_shr,
+            NOT: self.alu_handle_not,
+            OR: self.alu_handle_or,
+            SHL: self.alu_handle_shl,
+            SHR: self.alu_handle_shr,
             SUB: self.alu_handle_sub,
-            # XOR: self.alu_handle_xor,
+            XOR: self.alu_handle_xor,
         }
 
     def ram_read(self, mar):
@@ -136,7 +138,7 @@ class CPU:
 
         print(f"TRACE: %02X | %02X %02X %02X |" % (
             self.pc,
-            # self.fl,
+            self.fl,
             # self.ie,
             self.ram_read(self.pc),
             self.ram_read(self.pc + 1),
@@ -152,6 +154,7 @@ class CPU:
         """Run the CPU."""
         while True:
             self.timer_interrupt()
+            self.keyboard_interrupt()
             self.check_interrupts()
 
             ir = self.ram_read(self.pc)
@@ -173,8 +176,13 @@ class CPU:
     def timer_interrupt(self):
         seconds_elapsed = (datetime.now() - self.start_time).total_seconds()
         if seconds_elapsed >= 1:
-            self.reg[IS] |= 0b00000001
+            self.reg[IS] |= 1
             self.start_time = datetime.now()
+
+    def keyboard_interrupt(self):
+        if msvcrt.kbhit():
+            self.reg[IS] |= 0b10
+            self.ram_write(ord(msvcrt.getwch()), 0xF4)
 
     def check_interrupts(self):
         if self.interrupts_enabled:
@@ -216,7 +224,8 @@ class CPU:
 
     # General Instructions
 
-    def handle_call(self, a, b):
+    def handle_call(self, reg_num, _):
+        # print(f'CALL R{reg_num}')
         # Decrement SP
         self.reg[SP] -= 1
 
@@ -225,16 +234,17 @@ class CPU:
         self.ram_write(return_address, self.reg[SP])
 
         # Set PC to value in register
-        reg_num = self.ram_read(self.pc + 1)
         self.pc = self.reg[reg_num]
 
     def handle_hlt(self, *_):
+        # print('HLT')
         sys.exit(0)
 
-    # def handle_int(self, a, b):
+    # def handle_int(self, reg_num, _):
     #     pass
 
     def handle_iret(self, *_):
+        # print('IRET')
         # Pop registers R6-R0 off stack in that order
         for i in range(6, -1, -1):
             self.handle_pop(i, _)
@@ -252,37 +262,68 @@ class CPU:
         # Re-enable interrupts
         self.interrupts_enabled = True
 
-    # def handle_jeq(self, a, b):
-    #     pass
+    def handle_jeq(self, reg_num, _):
+        # print(f'JEQ R{reg_num}')
+        if self.fl & 1:
+            self.handle_jmp(reg_num, _)
+        else:
+            self.pc += 2
 
-    # def handle_jge(self, a, b):
-    #     pass
+    def handle_jge(self, reg_num, _):
+        # print(f'JGE R{reg_num}')
+        if self.fl & 1 or self.fl & 0b10:
+            self.handle_jmp(reg_num, _)
+        else:
+            self.pc += 2
 
-    # def handle_jgt(self, a, b):
-    #     pass
+    def handle_jgt(self, reg_num, _):
+        # print(f'JGT R{reg_num}')
+        if self.fl & 0b10:
+            self.handle_jmp(reg_num, _)
+        else:
+            self.pc += 2
 
-    # def handle_jle(self, a, b):
-    #     pass
+    def handle_jle(self, reg_num, _):
+        # print(f'JLE R{reg_num}')
+        if self.fl & 1 or self.fl & 0b100:
+            self.handle_jmp(reg_num, _)
+        else:
+            self.pc += 2
 
-    # def handle_jlt(self, a, b):
-    #     pass
+    def handle_jlt(self, reg_num, _):
+        # print(f'JLT R{reg_num}')
+        if self.fl & 0b100:
+            self.handle_jmp(reg_num, _)
+        else:
+            self.pc += 2
 
     def handle_jmp(self, reg_num, _):
+        # print(f'JMP R{reg_num}')
         self.pc = self.reg[reg_num]
 
-    # def handle_jne(self, a, b):
-    #     pass
+    def handle_jne(self, reg_num, _):
+        # print(f'JNE R{reg_num}')
+        if self.fl & 1 == 0:
+            self.handle_jmp(reg_num, _)
+        else:
+            self.pc += 2
 
-    # def handle_ld(self, a, b):
-    #     pass
+    def handle_ld(self, reg_a, reg_b):
+        # print(f'LD R{reg_a}, R{reg_b}')
+        memory_addr = self.reg[reg_b]
+        value = self.ram_read(memory_addr)
+        self.reg[reg_a] = value
 
-    def handle_ldi(self, reg_a, reg_b):
-        self.reg[reg_a] = reg_b
+    def handle_ldi(self, reg_num, immediate):
+        # print(f'LDI R{reg_num}, {immediate}')
+        self.reg[reg_num] = immediate
 
-    # def handle_nop(self, a, b):
-    #     pass
+    def handle_nop(self, *_):
+        # print(f'NOP')
+        pass
 
     def handle_pop(self, reg_num, _):
+        # print(f'POP R{reg_num}')
         # Get value from address pointed to by SP
         val = self.ram_read(self.reg[SP])
 
@@ -293,20 +334,25 @@ class CPU:
         self.reg[SP] += 1
 
     def handle_pra(self, reg_num, _):
+        # print(f'PRA R{reg_num}')
         print(chr(self.reg[reg_num]))
 
     def handle_prn(self, reg_num, _):
+        # print(f'PRN R{reg_num}')
         print(self.reg[reg_num])
 
     def handle_push(self, reg_num, _):
+        # print(f'PUSH R{reg_num}')
         self.helper_push(self.reg[reg_num])
 
     def handle_ret(self, *_):
+        # print('RET')
         # Pop return address off stack and store it on PC
         self.pc = self.ram_read(self.reg[SP])
         self.reg[SP] += 1
 
     def handle_st(self, reg_a, reg_b):
+        # print(f'ST R{reg_a}, R{reg_b}')
         val = self.reg[reg_b]
         address = self.reg[reg_a]
         self.ram_write(val, address)
@@ -314,74 +360,74 @@ class CPU:
     # ALU Instructions
 
     def alu_handle_add(self, reg_a, reg_b):
+        # print(f'ADD R{reg_a}, R{reg_b}')
         self.reg[reg_a] += self.reg[reg_b]
 
-    # def alu_handle_and(self, a, b):
-    #     # Perform bitwise-AND on value in register
-    #     pass
+    def alu_handle_addi(self, reg_num, immediate):
+        # print(f'ADDI R{reg_num}, R{immediate}')
+        self.reg[reg_num] += immediate
 
-    # def alu_handle_cmp(self, a, b):
-    #     if self.reg[a] == self.reg[b]:
-    #         # Set Equal E flag to 1
-    #         pass
-    #     else:
-    #         # Set Equal E flag to 0
-    #         pass
-    #     if self.reg[a] < self.reg[b]:
-    #         # Set Less-than L flag to 1
-    #         pass
-    #     else:
-    #         # Set Less-than L flag to 0
-    #         pass
-    #     if self.reg[a] > self.reg[b]:
-    #         # Set Greater-than G flag to 1
-    #         pass
-    #     else:
-    #         # Set Greater-than G flag to 0
-    #         pass
+    def alu_handle_and(self, reg_a, reg_b):
+        # print(f'AND R{reg_a}, R{reg_b}')
+        self.reg[reg_a] &= self.reg[reg_b]
+
+    def alu_handle_cmp(self, reg_a, reg_b):
+        # print(f'CMP R{reg_a}, R{reg_b}')
+        if self.reg[reg_a] == self.reg[reg_b]:
+            self.fl = 1
+        elif self.reg[reg_a] < self.reg[reg_b]:
+            self.fl = 0b100
+        elif self.reg[reg_a] > self.reg[reg_b]:
+            self.fl = 0b10
 
     def alu_handle_dec(self, reg_num, _):
+        # print(f'DEC R{reg_num}')
         self.reg[reg_num] -= 1
 
-    # def alu_handle_div(self, a, b):
-    #     if self.reg[reg_b] == 0:
-    #         # Print error message and halt
-    #         pass
-    #     else:
-    #         self.reg[reg_a] /= self.reg[reg_b]
+    def alu_handle_div(self, reg_a, reg_b):
+        # print(F'DIV R{reg_a}, R{reg_b}')
+        if not self.reg[reg_b]:
+            print('ERROR: Cannot divide by 0')
+            self.handle_hlt()
+        else:
+            self.reg[reg_a] /= self.reg[reg_b]
 
     def alu_handle_inc(self, reg_num, _):
+        # print(f'INC R{reg_num}')
         self.reg[reg_num] += 1
 
-    # def alu_handle_mod(self, a, b):
-    #     if self.reg[reg_b] == 0:
-    #         # Print error message and halt
-    #         pass
-    #     else:
-    #         self.reg[reg_a] %= self.reg[reg_b]
+    def alu_handle_mod(self, reg_a, reg_b):
+        # print(f'MODE R{reg_a}, R{reg_b}')
+        if not self.reg[reg_b]:
+            print('ERROR: Cannot divide by 0')
+            self.handle_hlt()
+        else:
+            self.reg[reg_a] %= self.reg[reg_b]
 
     def alu_handle_mul(self, reg_a, reg_b):
+        # print(f'MUL R{reg_a}, R{reg_b}')
         self.reg[reg_a] *= self.reg[reg_b]
 
-    # def alu_handle_not(self, a, b):
-    #     # Perform bitwise-NOT on value in register
-    #     pass
+    def alu_handle_not(self, reg_num, _):
+        # print(f'NOT R{reg_num}')
+        self.reg[reg_num] = ~self.reg[reg_num]
 
-    # def alu_handle_or(self, a, b):
-    #     # Perform bitwise-OR on value in register
-    #     pass
+    def alu_handle_or(self, reg_a, reg_b):
+        # print(f'OR R{reg_a}, R{reg_b}')
+        self.reg[reg_a] |= self.reg[reg_b]
 
-    # def alu_handle_shl(self, a, b):
-    #     # Shift value in registerA left by number of bits specified in registerB, filling low bits with 0
-    #     pass
+    def alu_handle_shl(self, reg_a, reg_b):
+        # print(f'SHL R{reg_a}, R{reg_b}')
+        self.reg[reg_a] <<= self.reg[reg_b]
 
-    # def alu_handle_shr(self, a, b):
-    #     # Shift value in registerA right by number of bits specified in registerB, filling low bits with 0
-    #     pass
+    def alu_handle_shr(self, reg_a, reg_b):
+        # print(f'SHR R{reg_a}, R{reg_b}')
+        self.reg[reg_a] >>= self.reg[reg_b]
 
     def alu_handle_sub(self, reg_a, reg_b):
+        # print(f'SUB R{reg_a}, R{reg_b}')
         self.reg[reg_a] -= self.reg[reg_b]
 
-    # def alu_handle_xor(self, a, b):
-    #     # Perform bitwise-XOR between values in registerA and registerB, storing result in registerA
-    #     pass
+    def alu_handle_xor(self, reg_a, reg_b):
+        # print(f'XOR R{reg_a}, R{reg_b}')
+        self.reg[reg_a] ^= self.reg[reg_b]
