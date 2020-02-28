@@ -2,6 +2,7 @@
 
 import sys
 
+from datetime import datetime
 
 ADD = 0b10100000
 # AND = 0b10101000
@@ -12,13 +13,13 @@ DEC = 0b01100110
 HLT = 0b00000001
 INC = 0b01100101
 # INT = 0b01010010
-# IRET = 0b00010011
+IRET = 0b00010011
 # JEQ = 0b01010101
 # JGE = 0b01011010
 # JGT = 0b01010111
 # JLE = 0b01011001
 # JLT = 0b01011000
-# JMP = 0b01010100
+JMP = 0b01010100
 # JNE = 0b01010110
 # LD = 0b10000011
 LDI = 0b10000010
@@ -28,7 +29,7 @@ MUL = 0b10100010
 # NOT = 0b01101001
 # OR = 0b10101010
 POP = 0b01000110
-# PRA = 0b01001000
+PRA = 0b01001000
 PRN = 0b01000111
 PUSH = 0b01000101
 RET = 0b00010001
@@ -38,6 +39,8 @@ ST = 0b10000100
 SUB = 0b10100001
 # XOR = 0b10101011
 
+IM = 5
+IS = 6
 SP = 7
 
 
@@ -50,46 +53,49 @@ class CPU:
         self.reg = [0] * 8
         self.pc = 0
         self.reg[SP] = 0xF4
-        # self.fl = 0
-        # self.ie = 0
+        self.fl = 0
+        self.ie = 0
 
-        self.branchtable = {}
-        self.branchtable[CALL] = self.handle_call
-        self.branchtable[HLT] = self.handle_hlt
-        # self.branchtable[INT] = self.handle_int
-        # self.branchtable[IRET] = self.handle_iret
-        # self.branchtable[JEQ] = self.handle_jeq
-        # self.branchtable[JGE] = self.handle_jge
-        # self.branchtable[JGT] = self.handle_jgt
-        # self.branchtable[JLE] = self.handle_jle
-        # self.branchtable[JLT] = self.handle_jlt
-        # self.branchtable[JMP] = self.handle_jmp
-        # self.branchtable[JNE] = self.handle_jne
-        # self.branchtable[LD] = self.handle_ld
-        self.branchtable[LDI] = self.handle_ldi
-        # self.branchtable[MUL] = self.handle_mul
-        # self.branchtable[NOP] = self.handle_nop
-        self.branchtable[POP] = self.handle_pop
-        # self.branchtable[PRA] = self.handle_pra
-        self.branchtable[PRN] = self.handle_prn
-        self.branchtable[PUSH] = self.handle_push
-        self.branchtable[RET] = self.handle_ret
-        self.branchtable[ST] = self.handle_st
+        self.interrupts_enabled = True
+        self.start_time = datetime.now()
 
-        self.branchtable[ADD] = self.alu_handle_add
-        # self.branchtable[AND] = self.alu_handle_and
-        # self.branchtable[CMP] = self.alu_handle_cmp
-        self.branchtable[DEC] = self.alu_handle_dec
-        # self.branchtable[DIV] = self.alu_handle_div
-        self.branchtable[INC] = self.alu_handle_inc
-        # self.branchtable[MOD] = self.alu_handle_mod
-        self.branchtable[MUL] = self.alu_handle_mul
-        # self.branchtable[NOT] = self.alu_handle_not
-        # self.branchtable[OR] = self.alu_handle_or
-        # self.branchtable[SHL] = self.alu_handle_shl
-        # self.branchtable[SHR] = self.alu_handle_shr
-        self.branchtable[SUB] = self.alu_handle_sub
-        # self.branchtable[XOR] = self.alu_handle_xor
+        self.branchtable = {
+            CALL: self.handle_call,
+            HLT: self.handle_hlt,
+            # INT: self.handle_int,
+            IRET: self.handle_iret,
+            # JEQ: self.handle_jeq,
+            # JGE: self.handle_jge,
+            # JGT: self.handle_jgt,
+            # JLE: self.handle_jle,
+            # JLT: self.handle_jlt,
+            JMP: self.handle_jmp,
+            # JNE: self.handle_jne,
+            # LD: self.handle_ld,
+            LDI: self.handle_ldi,
+            # MUL: self.handle_mul,
+            # NOP: self.handle_nop,
+            POP: self.handle_pop,
+            PRA: self.handle_pra,
+            PRN: self.handle_prn,
+            PUSH: self.handle_push,
+            RET: self.handle_ret,
+            ST: self.handle_st,
+            ADD: self.alu_handle_add,
+            # AND: self.alu_handle_and,
+            # CMP: self.alu_handle_cmp,
+            DEC: self.alu_handle_dec,
+            # DIV: self.alu_handle_div,
+            INC: self.alu_handle_inc,
+            # MOD: self.alu_handle_mod,
+            MUL: self.alu_handle_mul,
+            # NOT: self.alu_handle_not,
+            # OR: self.alu_handle_or,
+            # SHL: self.alu_handle_shl,
+            # SHR: self.alu_handle_shr,
+            SUB: self.alu_handle_sub,
+            # XOR: self.alu_handle_xor,
+        }
 
     def ram_read(self, mar):
         return self.ram[mar]
@@ -108,7 +114,7 @@ class CPU:
                     if line == '':
                         continue
                     instruction = int(line, 2)
-                    self.ram[address] = instruction
+                    self.ram_write(instruction, address)
                     address += 1
         except FileNotFoundError:
             print('ERROR: Must have valid file name')
@@ -145,7 +151,10 @@ class CPU:
     def run(self):
         """Run the CPU."""
         while True:
-            ir = self.ram[self.pc]
+            self.timer_interrupt()
+            self.check_interrupts()
+
+            ir = self.ram_read(self.pc)
             operand_a = self.ram_read(self.pc + 1)
             operand_b = self.ram_read(self.pc + 2)
             operand_count = ir >> 6
@@ -159,6 +168,52 @@ class CPU:
             if not sets_pc:
                 self.pc += instruction_length
 
+    # Interrupt Methods
+
+    def timer_interrupt(self):
+        seconds_elapsed = (datetime.now() - self.start_time).total_seconds()
+        if seconds_elapsed >= 1:
+            self.reg[IS] |= 0b00000001
+            self.start_time = datetime.now()
+
+    def check_interrupts(self):
+        if self.interrupts_enabled:
+            masked_interrupts = self.reg[IM] & self.reg[IS]
+
+            for i in range(8):
+                interrupt_happened = ((masked_interrupts >> i) & 1) == 1
+                if interrupt_happened:
+                    # Disable further interrupts
+                    self.interrupts_enabled = False
+
+                    # Clear bit in IS register
+                    # # Update to be bit-specific
+                    self.reg[IS] = 0
+
+                    # Push PC register on the stack
+                    self.helper_push(self.pc)
+
+                    # Push FL register on the stack
+                    self.helper_push(self.fl)
+
+                    # Push registers R0-R6 on the stack in that order
+                    for j in range(7):
+                        self.helper_push(self.reg[j])
+
+                    # Look up vector from interrupt vector table
+                    vector = 0xF8 + i
+
+                    # set PC to vector
+                    self.pc = self.ram_read(vector)
+
+                    break
+
+    # Helper Methods
+
+    def helper_push(self, value):
+        self.reg[SP] -= 1
+        self.ram_write(value, self.reg[SP])
+
     # General Instructions
 
     def handle_call(self, a, b):
@@ -167,10 +222,10 @@ class CPU:
 
         # Push return address on stack
         return_address = self.pc + 2
-        self.ram[self.reg[SP]] = return_address
+        self.ram_write(return_address, self.reg[SP])
 
         # Set PC to value in register
-        reg_num = self.ram[self.pc + 1]
+        reg_num = self.ram_read(self.pc + 1)
         self.pc = self.reg[reg_num]
 
     def handle_hlt(self, *_):
@@ -179,8 +234,23 @@ class CPU:
     # def handle_int(self, a, b):
     #     pass
 
-    # def handle_iret(self, a, b):
-    #     pass
+    def handle_iret(self, *_):
+        # Pop registers R6-R0 off stack in that order
+        for i in range(6, -1, -1):
+            self.handle_pop(i, _)
+
+        # Pop FL register off stack
+        fl_reg = self.ram_read(self.reg[SP])
+        self.fl = fl_reg
+        self.reg[SP] += 1
+
+        # Pop return address off stack and store in PC
+        return_addr = self.ram_read(self.reg[SP])
+        self.pc = return_addr
+        self.reg[SP] += 1
+
+        # Re-enable interrupts
+        self.interrupts_enabled = True
 
     # def handle_jeq(self, a, b):
     #     pass
@@ -197,8 +267,8 @@ class CPU:
     # def handle_jlt(self, a, b):
     #     pass
 
-    # def handle_jmp(self, a, b):
-    #     pass
+    def handle_jmp(self, reg_num, _):
+        self.pc = self.reg[reg_num]
 
     # def handle_jne(self, a, b):
     #     pass
@@ -214,7 +284,7 @@ class CPU:
 
     def handle_pop(self, reg_num, _):
         # Get value from address pointed to by SP
-        val = self.ram[self.reg[SP]]
+        val = self.ram_read(self.reg[SP])
 
         # Copy to given register
         self.reg[reg_num] = val
@@ -222,31 +292,24 @@ class CPU:
         # Increment SP
         self.reg[SP] += 1
 
-    # def handle_pra(self, a, b):
-    #     pass
+    def handle_pra(self, reg_num, _):
+        print(chr(self.reg[reg_num]))
 
     def handle_prn(self, reg_num, _):
         print(self.reg[reg_num])
 
     def handle_push(self, reg_num, _):
-        # Decrement SP
-        self.reg[SP] -= 1
-
-        # Get value in given register
-        reg_val = self.reg[reg_num]
-
-        # Copy value to address pointed to by SP
-        self.ram[self.reg[SP]] = reg_val
+        self.helper_push(self.reg[reg_num])
 
     def handle_ret(self, *_):
         # Pop return address off stack and store it on PC
-        self.pc = self.ram[self.reg[SP]]
+        self.pc = self.ram_read(self.reg[SP])
         self.reg[SP] += 1
 
     def handle_st(self, reg_a, reg_b):
-        reg_b_val = self.reg[reg_b]
-        reg_a_address = self.reg[reg_a]
-        self.ram[reg_a_address] = reg_b_val
+        val = self.reg[reg_b]
+        address = self.reg[reg_a]
+        self.ram_write(val, address)
 
     # ALU Instructions
 
